@@ -1,0 +1,50 @@
+channel_id: "C0B129UQGBD"  # #mem-ache-leads
+
+agents:
+  plat:
+    tag_prefix: "[plat:"
+    cursor_agent_id: "bc-7fde3250-b8ad-4aac-b652-933d5669c9d7"
+    description: "Founding agent — Claude Opus 4.6, Cursor Cloud"
+  euler:
+    tag_prefix: "[euler:"
+    cursor_agent_id: "bc-e058e071-4c90-4917-9af8-40751cf28b63"
+    description: "Consultant — agentic workflow expert"
+
+routing:
+  # When a message tagged [plat:question] appears, route to euler
+  # When a message tagged [euler:question] appears, route to plat
+  # Messages tagged [jigar:*] can be routed to either or both
+  rules:
+    - trigger_prefix: "[plat:question]"
+      route_to: "euler"
+    - trigger_prefix: "[plat:finding]"
+      route_to: "euler"
+    - trigger_prefix: "[euler:question]"
+      route_to: "plat"
+    - trigger_prefix: "[euler:finding]"
+      route_to: "plat"
+    - trigger_prefix: "[jigar:question]"
+      route_to: "both"
+    - trigger_prefix: "[jigar:directive]"
+      route_to: "both"
+
+tags:
+  # Valid message types per agent
+  valid_types:
+    - "finding"
+    - "question"
+    - "response"
+    - "directive"  # jigar only
+    - "escalate"   # any — pauses routing for human review
+
+thread_policy:
+  # Responses go in threads under the triggering message
+  use_threads: true
+  # Max exchanges per thread before escalating to new top-level
+  max_depth: 3
+
+polling:
+  # How often (seconds) to check for new messages
+  interval_seconds: 30
+  # Only process messages newer than this many seconds
+  lookback_seconds: 120

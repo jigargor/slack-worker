@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "codegen": "node scripts/gen-config.mjs",
+    "dev": "npm run codegen && wrangler dev",
+    "deploy": "npm run codegen && wrangler deploy"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250501.0",
+    "@types/js-yaml": "^4.0.9",
+    "js-yaml": "^4.1.1",
     "typescript": "^5.8.0",
     "wrangler": "^4.14.0"
   }

@@ -1,3 +1,5 @@
+import { AGENT_IDS, ALL_AGENTS, ROUTING_RULES, USE_THREADS } from "./config";
+
 interface Env {
   KV: KVNamespace;
   SLACK_CLIENT_ID: string;
@@ -233,18 +235,7 @@ async function handleSlackEvents(request: Request, env: Env): Promise<Response> 
   return jsonResponse({ ok: true, dispatched: targets });
 }
 
-// ── Routing logic (mirrors slack-bridge/config.yaml) ─────────────────
-
-const ROUTING_RULES: Array<{ prefix: string; type: string; route: string }> = [
-  { prefix: "plat", type: "question", route: "euler" },
-  { prefix: "plat", type: "finding", route: "euler" },
-  { prefix: "euler", type: "question", route: "plat" },
-  { prefix: "euler", type: "finding", route: "plat" },
-  { prefix: "jigar", type: "question", route: "both" },
-  { prefix: "jigar", type: "directive", route: "both" },
-];
-
-const ALL_AGENTS = ["plat", "euler"];
+// ── Routing logic (driven by config.yaml via src/config.ts) ──────────
 
 function resolveTargets(sender: string, msgType: string): string[] {
   for (const rule of ROUTING_RULES) {
@@ -271,11 +262,6 @@ function buildPrompt(
 }
 
 // ── Cursor Cloud Agents dispatch ─────────────────────────────────────
-
-const AGENT_IDS: Record<string, string> = {
-  plat: "bc-7fde3250-b8ad-4aac-b652-933d5669c9d7",
-  euler: "bc-e058e071-4c90-4917-9af8-40751cf28b63",
-};
 
 async function dispatchToCursor(apiKey: string, target: string, prompt: string): Promise<void> {
   const agentId = AGENT_IDS[target];
@@ -307,7 +293,7 @@ async function postToSlack(
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ channel, thread_ts: threadTs, text }),
+    body: JSON.stringify({ channel, ...(USE_THREADS ? { thread_ts: threadTs } : {}), text }),
   });
 }
 
