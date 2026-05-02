@@ -10,7 +10,7 @@ id = ""          # fill after `wrangler kv namespace create KV`
 # Non-secret vars — safe to commit
 [vars]
 SLACK_SCOPES = "chat:write,channels:history"
-# SLACK_REDIRECT_URI = "https://slack.yourdomain.com/slack/oauth/callback"
+# SLACK_REDIRECT_URI = "https://slack.shizuku.com/slack/oauth/callback"
 
 # Secrets set via `wrangler secret put`:
 #   SLACK_CLIENT_ID
