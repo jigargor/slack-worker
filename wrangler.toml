@@ -1,0 +1,20 @@
+name = "slack-worker"
+main = "src/index.ts"
+compatibility_date = "2025-05-01"
+
+# KV namespace for OAuth state nonces and event idempotency keys
+[[kv_namespaces]]
+binding = "KV"
+id = ""          # fill after `wrangler kv namespace create KV`
+
+# Non-secret vars — safe to commit
+[vars]
+SLACK_SCOPES = "chat:write,channels:history"
+# SLACK_REDIRECT_URI = "https://slack.yourdomain.com/slack/oauth/callback"
+
+# Secrets set via `wrangler secret put`:
+#   SLACK_CLIENT_ID
+#   SLACK_CLIENT_SECRET
+#   SLACK_SIGNING_SECRET
+#   SLACK_BOT_TOKEN        (after install)
+#   CURSOR_API_KEY          (for dispatch)
