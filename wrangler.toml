@@ -9,7 +9,7 @@ id = "62a3a3eafd7148b49b25ca4d221e4353"
 # Non-secret vars — safe to commit
 [vars]
 SLACK_SCOPES = "chat:write,channels:history"
-# SLACK_REDIRECT_URI = "https://slack.shizuku.com/slack/oauth/callback"
+SLACK_REDIRECT_URI = "https://slack-worker.gorjigaru.workers.dev/slack/oauth/callback"
 
 # Secrets set via `wrangler secret put`:
 #   SLACK_CLIENT_ID
