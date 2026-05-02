@@ -11,9 +11,6 @@ dev.vars
 dist/
 .wrangler/
 
-# Generated from config.yaml
-src/config.ts
-
 # Logs
 *.log
 npm-debug.log*

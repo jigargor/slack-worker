@@ -2,6 +2,9 @@ name = "slack-worker"
 main = "src/index.ts"
 compatibility_date = "2025-05-01"
 
+[build]
+command = "npm run codegen"
+
 [[kv_namespaces]]
 binding = "KV"
 id = "62a3a3eafd7148b49b25ca4d221e4353"
