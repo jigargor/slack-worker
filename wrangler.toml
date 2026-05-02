@@ -2,10 +2,9 @@ name = "slack-worker"
 main = "src/index.ts"
 compatibility_date = "2025-05-01"
 
-# KV namespace for OAuth state nonces and event idempotency keys
 [[kv_namespaces]]
 binding = "KV"
-id = ""          # fill after `wrangler kv namespace create KV`
+id = "62a3a3eafd7148b49b25ca4d221e4353"
 
 # Non-secret vars — safe to commit
 [vars]
