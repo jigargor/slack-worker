@@ -11,6 +11,14 @@ interface Env {
   CURSOR_API_KEY?: string;
 }
 
+interface CursorDispatchResult {
+  ok: boolean;
+  target: string;
+  status?: number;
+  error?: string;
+  runId?: string;
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────
 
 async function hmacSha256(secret: string, data: string): Promise<ArrayBuffer> {
@@ -219,13 +227,27 @@ async function handleSlackEvents(request: Request, env: Env): Promise<Response> 
   if (targets.length === 0) return jsonResponse({ ok: true });
 
   const botToken = env.SLACK_BOT_TOKEN ?? (await env.KV.get("slack_bot_token")) ?? "";
-  const cursorKey = env.CURSOR_API_KEY ?? "";
+  const cursorKey = (env.CURSOR_API_KEY ?? "").trim();
 
   for (const target of targets) {
     const prompt = buildPrompt(target, senderTag, evt.text ?? "", evt.ts ?? "", evt.thread_ts);
 
     if (cursorKey) {
-      await dispatchToCursor(cursorKey, target, prompt);
+      const result = await dispatchToCursor(cursorKey, target, prompt);
+      if (!result.ok) {
+        console.error("Cursor dispatch failed", result);
+        if (botToken) {
+          await postToSlack(
+            botToken,
+            evt.channel ?? "",
+            evt.ts ?? "",
+            `[bridge:error] Cursor dispatch to ${target} failed` +
+              ` (status=${result.status ?? "n/a"}${result.error ? `, error=${result.error}` : ""}).`,
+          );
+        }
+      } else {
+        console.log(`Cursor dispatch succeeded for ${target}`, { runId: result.runId });
+      }
     } else if (botToken) {
       await postToSlack(botToken, evt.channel ?? "", evt.ts ?? "",
         `[bridge:info] Would dispatch to ${target} but CURSOR_API_KEY is not set.`);
@@ -263,13 +285,19 @@ function buildPrompt(
 
 // ── Cursor Cloud Agents dispatch ─────────────────────────────────────
 
-async function dispatchToCursor(apiKey: string, target: string, prompt: string): Promise<void> {
+async function dispatchToCursor(
+  apiKey: string,
+  target: string,
+  prompt: string,
+): Promise<CursorDispatchResult> {
   const agentId = AGENT_IDS[target];
-  if (!agentId) return;
+  if (!agentId) {
+    return { ok: false, target, error: "missing agent id in AGENT_IDS" };
+  }
 
   const auth = btoa(`${apiKey}:`);
   try {
-    await fetch(`https://api.cursor.com/v1/agents/${agentId}/runs`, {
+    const response = await fetch(`https://api.cursor.com/v1/agents/${agentId}/runs`, {
       method: "POST",
       headers: {
         Authorization: `Basic ${auth}`,
@@ -277,8 +305,23 @@ async function dispatchToCursor(apiKey: string, target: string, prompt: string):
       },
       body: JSON.stringify({ prompt: { text: prompt } }),
     });
+
+    const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    if (!response.ok) {
+      const error = typeof payload.error === "string"
+        ? payload.error
+        : typeof payload.message === "string"
+          ? payload.message
+          : "unknown cursor api error";
+      return { ok: false, target, status: response.status, error };
+    }
+
+    const runId = typeof payload.id === "string" ? payload.id : undefined;
+    return { ok: true, target, status: response.status, runId };
   } catch (err) {
     console.error(`Dispatch to ${target} failed:`, err);
+    const error = err instanceof Error ? err.message : "unknown fetch error";
+    return { ok: false, target, error };
   }
 }
 
